@@ -125,6 +125,16 @@ function initCommands() {
             sendAnalytics(createApiEvent('chat.toggled'));
             APP.UI.toggleChat();
         },
+        'distance-disco-match': participantId => {
+            if (participantId) {
+                document.getElementById('localVideoContainer').classList.toggle('blinkborder', true);
+                document.getElementById(`participant_${participantId}`).classList.toggle('blinkborder', true);
+            } else {
+                document.querySelectorAll('span.videocontainer').forEach(
+                    span => span.classList.toggle('blinkborder', false)
+                );
+            }
+        },
 
         /**
          * Callback to invoke when the "toggle-share-screen" command is received.

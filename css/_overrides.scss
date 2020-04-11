@@ -1,3 +1,44 @@
 body, body > div#react > div, #largeVideoContainer {
     background: none !important;
 }
+
+.tile-view .subject, #new-toolbox {
+    opacity: 0 !important;
+    display: none !important;
+}
+
+.blinkborder {
+	animation: discoborder 1s steps(5) infinite;
+    border: 10px solid transparent !important;
+    border-radius: 4px;
+}
+
+@keyframes discoborder {
+    0% {
+        border-color: #ff0000;
+    }
+
+    20% {
+        border-color: #00ff00;
+    }
+
+    40% {
+        border-color: #ffff00;
+    }
+
+    60% {
+        border-color: #00ffff;
+    }
+
+    80% {
+        border-color: #ff00ff;
+    }
+}
+
+.new-toolbox .button-group-right {
+    display: none;
+}
+
+#sideToolbarContainer {
+    height: 100%;
+}
