@@ -13,6 +13,7 @@ import {
 import { parseJWTFromURLParams } from '../../react/features/base/jwt';
 import { invite } from '../../react/features/invite';
 import { toggleTileView, setTileView } from '../../react/features/video-layout';
+import { pinParticipant } from '../../react/features/base/participants';
 import { getJitsiMeetTransport } from '../transport';
 
 import { API_ID, ENDPOINT_TEXT_MESSAGE_NAME } from './constants';
@@ -156,6 +157,9 @@ function initCommands() {
         'set-tile-view': flag => {
             sendAnalytics(createApiEvent('tile-view.set'));
             APP.store.dispatch(setTileView(flag));
+        },
+        'pin-participant': participantId => {
+            APP.store.dispatch(pinParticipant(participantId));
         },
         'video-hangup': (showFeedbackDialog = true) => {
             sendAnalytics(createApiEvent('video.hangup'));

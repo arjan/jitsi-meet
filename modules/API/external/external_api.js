@@ -42,6 +42,7 @@ const commands = {
     toggleShareScreen: 'toggle-share-screen',
     toggleTileView: 'toggle-tile-view',
     setTileView: 'set-tile-view',
+    pinParticipant: 'pin-participant',
     toggleVideo: 'toggle-video',
     distanceDiscoMatch: 'distance-disco-match'
 };
