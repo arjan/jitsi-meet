@@ -255,6 +255,16 @@ api.executeCommand('toggleShareScreen');
 api.executeCommand('toggleTileView');
 ```
 
+* **setTileView** - Enter / exit tile view layout mode. This command requires one argument - whether or not the tile view is active.
+```javascript
+api.executeCommand('setTileView', true);
+```
+
+* **pinParticipant** - Focus the conference on one given participant. This command requires one argument - the participant ID.
+```javascript
+api.executeCommand('pinParticipant', 'fe7fe98a7');
+```
+
 * **hangup** - Hangups the call. No arguments are required.
 ```javascript
 api.executeCommand('hangup');
