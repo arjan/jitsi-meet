@@ -41,6 +41,7 @@ const commands = {
     toggleFilmStrip: 'toggle-film-strip',
     toggleShareScreen: 'toggle-share-screen',
     toggleTileView: 'toggle-tile-view',
+    setTileView: 'set-tile-view',
     toggleVideo: 'toggle-video',
     distanceDiscoMatch: 'distance-disco-match'
 };

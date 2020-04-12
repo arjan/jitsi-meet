@@ -12,7 +12,7 @@ import {
 } from '../../react/features/base/conference';
 import { parseJWTFromURLParams } from '../../react/features/base/jwt';
 import { invite } from '../../react/features/invite';
-import { toggleTileView } from '../../react/features/video-layout';
+import { toggleTileView, setTileView } from '../../react/features/video-layout';
 import { getJitsiMeetTransport } from '../transport';
 
 import { API_ID, ENDPOINT_TEXT_MESSAGE_NAME } from './constants';
@@ -151,8 +151,11 @@ function initCommands() {
         },
         'toggle-tile-view': () => {
             sendAnalytics(createApiEvent('tile-view.toggled'));
-
             APP.store.dispatch(toggleTileView());
+        },
+        'set-tile-view': flag => {
+            sendAnalytics(createApiEvent('tile-view.set'));
+            APP.store.dispatch(setTileView(flag));
         },
         'video-hangup': (showFeedbackDialog = true) => {
             sendAnalytics(createApiEvent('video.hangup'));
