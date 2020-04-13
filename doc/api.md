@@ -240,6 +240,11 @@ api.executeCommand('setAudio', false);
 api.executeCommand('toggleVideo');
 ```
 
+* **setVideo** - Mutes / unmutes the video for the local participant. This command requires one argument - whether video should be on (true) or off (false).
+```javascript
+api.executeCommand('setVideo', false);
+```
+
 * **toggleFilmStrip** - Hides / shows the filmstrip. No arguments are required.
 ```javascript
 api.executeCommand('toggleFilmStrip');

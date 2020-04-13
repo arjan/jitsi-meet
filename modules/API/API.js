@@ -123,6 +123,11 @@ function initCommands() {
             logger.log('Video toggle: API command received');
             APP.conference.toggleVideoMuted(false /* no UI */);
         },
+        'set-video': flag => {
+            sendAnalytics(createApiEvent('set-video'));
+            logger.log('Video toggle: API command received');
+            APP.conference.muteVideo(!flag, false /* no UI */);
+        },
         'toggle-film-strip': () => {
             sendAnalytics(createApiEvent('film.strip.toggled'));
             APP.UI.toggleFilmstrip();

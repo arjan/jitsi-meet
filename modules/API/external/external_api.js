@@ -45,6 +45,7 @@ const commands = {
     setTileView: 'set-tile-view',
     pinParticipant: 'pin-participant',
     toggleVideo: 'toggle-video',
+    setVideo: 'set-video',
     distanceDiscoMatch: 'distance-disco-match'
 };
 
