@@ -37,6 +37,7 @@ const commands = {
     subject: 'subject',
     submitFeedback: 'submit-feedback',
     toggleAudio: 'toggle-audio',
+    setAudio: 'set-audio',
     toggleChat: 'toggle-chat',
     toggleFilmStrip: 'toggle-film-strip',
     toggleShareScreen: 'toggle-share-screen',

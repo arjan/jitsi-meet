@@ -113,6 +113,11 @@ function initCommands() {
             logger.log('Audio toggle: API command received');
             APP.conference.toggleAudioMuted(false /* no UI */);
         },
+        'set-audio': flag => {
+            sendAnalytics(createApiEvent('set-audio'));
+            logger.log('Audio set: API command received');
+            APP.conference.muteAudio(!flag, false /* no UI */);
+        },
         'toggle-video': () => {
             sendAnalytics(createApiEvent('toggle-video'));
             logger.log('Video toggle: API command received');

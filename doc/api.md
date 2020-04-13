@@ -230,6 +230,11 @@ api.executeCommand('subject', 'New Conference Subject');
 api.executeCommand('toggleAudio');
 ```
 
+* **setAudio** - Mutes / unmutes the audio for the local participant. This command requires one argument - whether audio should be on (true) or off (false).
+```javascript
+api.executeCommand('setAudio', false);
+```
+
 * **toggleVideo** - Mutes / unmutes the video for the local participant. No arguments are required.
 ```javascript
 api.executeCommand('toggleVideo');
