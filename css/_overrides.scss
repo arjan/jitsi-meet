@@ -15,24 +15,30 @@ body, body > div#react > div, #largeVideoContainer {
 	animation: discoborder 1s steps(5) infinite;
 }
 
+$red: #ff2148;
+$yellow: #fff345;
+$green: #00c36e;
+$blue: #2487ff;
+$pink: #fd7ac4;
+
 @keyframes discoborder {
     0% {
-        box-shadow: 0 0 0 10px #ff0000;
+        box-shadow: 0 0 0 5px $red;
     }
 
     20% {
-        box-shadow: 0 0 0 10px #00ff00;
+        box-shadow: 0 0 0 5px $pink;
     }
 
     40% {
-        box-shadow: 0 0 0 10px #ffff00;
+        box-shadow: 0 0 0 5px $yellow;
     }
 
     60% {
-        box-shadow: 0 0 0 10px #00ffff;
+        box-shadow: 0 0 0 5px $blue;
     }
 
     80% {
-        box-shadow: 0 0 0 10px #ff00ff;
+        box-shadow: 0 0 0 5px $green;
     }
 }
