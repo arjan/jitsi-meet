@@ -6,38 +6,38 @@ var config = {
 
     hosts: {
         // XMPP domain.
-        domain: 'video.duodisco.nl',
+        domain: 'video.distancedisco.nl',
 
         // When using authentication, domain for guest users.
         // anonymousdomain: 'guest.example.com',
 
         // Domain for authenticated users. Defaults to <domain>.
-        // authdomain: 'video.duodisco.nl',
+        // authdomain: 'video.distancedisco.nl',
 
         // Jirecon recording component domain.
-        // jirecon: 'jirecon.video.duodisco.nl',
+        // jirecon: 'jirecon.video.distancedisco.nl',
 
         // Call control component (Jigasi).
-        // call_control: 'callcontrol.video.duodisco.nl',
+        // call_control: 'callcontrol.video.distancedisco.nl',
 
         // Focus component domain. Defaults to focus.<domain>.
-        // focus: 'focus.video.duodisco.nl',
+        // focus: 'focus.video.distancedisco.nl',
 
         // XMPP MUC domain. FIXME: use XEP-0030 to discover it.
-        muc: 'conference.video.duodisco.nl'
+        muc: 'conference.video.distancedisco.nl'
     },
 
     // BOSH URL. FIXME: use XEP-0156 to discover it.
-    bosh: '//video.duodisco.nl/http-bind',
+    bosh: '//video.distancedisco.nl/http-bind',
 
     // Websocket URL
-    // websocket: 'wss://video.duodisco.nl/xmpp-websocket',
+    // websocket: 'wss://video.distancedisco.nl/xmpp-websocket',
 
     // The name of client node advertised in XEP-0115 'c' stanza
     clientNode: 'http://jitsi.org/jitsimeet',
 
     // The real JID of focus participant - can be overridden here
-    // focusUserJid: 'focus@auth.video.duodisco.nl',
+    // focusUserJid: 'focus@auth.video.distancedisco.nl',
 
 
     // Testing / experimental features.
@@ -184,9 +184,9 @@ var config = {
     //     appKey: '<APP_KEY>' // Specify your app key here.
     //     // A URL to redirect the user to, after authenticating
     //     // by default uses:
-    //     // 'https://video.duodisco.nl/static/oauth.html'
+    //     // 'https://video.distancedisco.nl/static/oauth.html'
     //     redirectURI:
-    //          'https://video.duodisco.nl/subfolder/static/oauth.html'
+    //          'https://video.distancedisco.nl/subfolder/static/oauth.html'
     // },
     // When integrations like dropbox are enabled only that will be shown,
     // by enabling fileRecordingsServiceEnabled, we show both the integrations
@@ -342,7 +342,7 @@ var config = {
         // The STUN servers that will be used in the peer to peer connections
         stunServers: [
 
-            // { urls: 'stun:video.duodisco.nl:4446' },
+            // { urls: 'stun:video.distancedisco.nl:4446' },
             { urls: 'stun:meet-jit-si-turnrelay.jitsi.net:443' }
         ],
 
