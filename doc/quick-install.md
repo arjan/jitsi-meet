@@ -25,6 +25,14 @@ Finally on the same machine test that you can ping the FQDN with: `ping "$(hostn
 echo 'deb https://download.jitsi.org stable/' >> /etc/apt/sources.list.d/jitsi-stable.list
 wget -qO -  https://download.jitsi.org/jitsi-key.gpg.key | sudo apt-key add -
 ```
+### Open ports in your firewall
+
+Open the following ports in your firewall, to allow traffic to the machine running jitsi:
+
+ - 80 TCP
+ - 443 TCP
+ - 10000 UDP
+
 
 ### Install Jitsi Meet
 
@@ -50,7 +58,7 @@ This hostname (or IP address) will be used for virtualhost configuration inside 
 
 In order to have encrypted communications, you need a [TLS certificate](https://en.wikipedia.org/wiki/Transport_Layer_Security). The easiest way is to use [Let's Encrypt](https://letsencrypt.org/).
 
-_Note_: Jitsi Meet mobile apps *require* a valid certificate signed by a trusted [Certificate Authority](https://en.wikipedia.org/wiki/Certificate_authority) and will not be able to connect to your server if you choose a self-signed certificate.
+_Note_: Jitsi Meet mobile apps *require* a valid certificate signed by a trusted [Certificate Authority](https://en.wikipedia.org/wiki/Certificate_authority) (such as a Let's Encrypt certificate) and will not be able to connect to your server if you choose a self-signed certificate.
 
 Simply run the following in your shell:
 
