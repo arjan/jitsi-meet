@@ -9,6 +9,16 @@ body, body > div#react > div, #largeVideoContainer {
     display: none !important;
 }
 
+// toolbox always in view (not only on hover)
+#new-toolbox {
+    bottom: 0 !important;
+}
+
+// move camera button to right
+#new-toolbox .toolbox-content .button-group-center {
+    justify-content: flex-end;
+}
+
 #sideToolbarContainer {
     height: calc(100% - 80px);
 }
