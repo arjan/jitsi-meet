@@ -2,7 +2,9 @@ body, body > div#react > div, #largeVideoContainer {
     background: none !important;
 }
 
-.tile-view .subject, #new-toolbox .button-group-right {
+.tile-view .subject,
+.invite-more-container,
+#new-toolbox .button-group-right {
     opacity: 0 !important;
     display: none !important;
 }
