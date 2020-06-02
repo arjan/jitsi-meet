@@ -33,7 +33,7 @@ class MessageRecipient extends AbstractMessageRecipient<Props> {
             <div id = 'chat-recipient'>
                 <span>
                     { t('chat.messageTo', {
-                        recipient: _privateMessageRecipient
+                        recipient: _privateMessageRecipient.replace(/^.*>/, '')
                     }) }
                 </span>
                 <div onClick = { this.props._onRemovePrivateMessageRecipient }>

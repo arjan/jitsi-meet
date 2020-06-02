@@ -49,14 +49,14 @@ class ChatMessage extends AbstractChatMessage<Props> {
                             { message.privateMessage && this._renderPrivateNotice() }
                         </div>
                         { message.privateMessage && message.messageType !== MESSAGE_TYPE_LOCAL
-                            && (
-                                <div className = 'messageactions'>
-                                    <PrivateMessageButton
-                                        participantID = { message.id }
-                                        reply = { true }
-                                        showLabel = { false } />
-                                </div>
-                            ) }
+                          && (
+                              <div className = 'messageactions'>
+                                  <PrivateMessageButton
+                                      participantID = { message.id }
+                                      reply = { true }
+                                      showLabel = { false } />
+                              </div>
+                          ) }
                     </div>
                 </div>
                 { this.props.showTimestamp && this._renderTimestamp() }
@@ -78,7 +78,7 @@ class ChatMessage extends AbstractChatMessage<Props> {
     _renderDisplayName() {
         return (
             <div className = 'display-name'>
-                { this.props.message.displayName }
+                { this.props.message.displayName.replace(/^.*>/, '') }
             </div>
         );
     }
