@@ -8,18 +8,29 @@ import {
     sendAnalytics
 } from '../../react/features/analytics';
 import {
+    getCurrentConference,
     sendTones,
     setPassword,
     setSubject
 } from '../../react/features/base/conference';
 import { parseJWTFromURLParams } from '../../react/features/base/jwt';
+import { JitsiRecordingConstants } from '../../react/features/base/lib-jitsi-meet';
 import {
     processExternalDeviceRequest
 } from '../../react/features/device-selection/functions';
-import { setE2EEKey } from '../../react/features/e2ee';
+import { isEnabled as isDropboxEnabled } from '../../react/features/dropbox';
+import { toggleE2EE } from '../../react/features/e2ee/actions';
 import { invite } from '../../react/features/invite';
 import { toggleTileView, setTileView } from '../../react/features/video-layout';
 import { pinParticipant } from '../../react/features/base/participants';
+import {
+    captureLargeVideoScreenshot,
+    resizeLargeVideo,
+    selectParticipantInLargeVideo
+} from '../../react/features/large-video/actions';
+import { toggleLobbyMode } from '../../react/features/lobby/actions.web';
+import { RECORDING_TYPES } from '../../react/features/recording/constants';
+import { getActiveSession } from '../../react/features/recording/functions';
 import { muteAllParticipants } from '../../react/features/remote-video-menu/actions';
 import { setVideoQuality } from '../../react/features/video-quality';
 
@@ -86,6 +97,9 @@ function initCommands() {
 
             APP.store.dispatch(muteAllParticipants(localIds));
         },
+        'toggle-lobby': isLobbyEnabled => {
+            APP.store.dispatch(toggleLobbyMode(isLobbyEnabled));
+        },
         'password': password => {
             const { conference, passwordRequired }
                 = APP.store.getState()['features/base/conference'];
@@ -111,10 +125,20 @@ function initCommands() {
         'proxy-connection-event': event => {
             APP.conference.onProxyConnectionEvent(event);
         },
+        'resize-large-video': (width, height) => {
+            logger.debug('Resize large video command received');
+            sendAnalytics(createApiEvent('largevideo.resized'));
+            APP.store.dispatch(resizeLargeVideo(width, height));
+        },
         'send-tones': (options = {}) => {
             const { duration, tones, pause } = options;
 
             APP.store.dispatch(sendTones(tones, duration, pause));
+        },
+        'set-large-video-participant': participantId => {
+            logger.debug('Set large video participant command received');
+            sendAnalytics(createApiEvent('largevideo.participant.set'));
+            APP.store.dispatch(selectParticipantInLargeVideo(participantId));
         },
         'subject': subject => {
             sendAnalytics(createApiEvent('subject.changed'));
@@ -210,14 +234,122 @@ function initCommands() {
                 logger.error('Failed sending endpoint text message', err);
             }
         },
-        'e2ee-key': key => {
-            logger.debug('Set E2EE key command received');
-            APP.store.dispatch(setE2EEKey(key));
+        'toggle-e2ee': enabled => {
+            logger.debug('Toggle E2EE key command received');
+            APP.store.dispatch(toggleE2EE(enabled));
         },
         'set-video-quality': frameHeight => {
             logger.debug('Set video quality command received');
             sendAnalytics(createApiEvent('set.video.quality'));
             APP.store.dispatch(setVideoQuality(frameHeight));
+        },
+
+        /**
+         * Starts a file recording or streaming depending on the passed on params.
+         * For youtube streams, `youtubeStreamKey` must be passed on. `youtubeBroadcastID` is optional.
+         * For dropbox recording, recording `mode` should be `file` and a dropbox oauth2 token must be provided.
+         * For file recording, recording `mode` should be `file` and optionally `shouldShare` could be passed on.
+         * No other params should be passed.
+         *
+         * @param { string } arg.mode - Recording mode, either `file` or `stream`.
+         * @param { string } arg.dropboxToken - Dropbox oauth2 token.
+         * @param { boolean } arg.shouldShare - Whether the recording should be shared with the participants or not.
+         * Only applies to certain jitsi meet deploys.
+         * @param { string } arg.youtubeStreamKey - The youtube stream key.
+         * @param { string } arg.youtubeBroadcastID - The youtube broacast ID.
+         * @returns {void}
+         */
+        'start-recording': ({ mode, dropboxToken, shouldShare, youtubeStreamKey, youtubeBroadcastID }) => {
+            const state = APP.store.getState();
+            const conference = getCurrentConference(state);
+
+            if (!conference) {
+                logger.error('Conference is not defined');
+
+                return;
+            }
+
+            if (dropboxToken && !isDropboxEnabled(state)) {
+                logger.error('Failed starting recording: dropbox is not enabled on this deployment');
+
+                return;
+            }
+
+            if (mode === JitsiRecordingConstants.mode.STREAM && !youtubeStreamKey) {
+                logger.error('Failed starting recording: missing youtube stream key');
+
+                return;
+            }
+
+            let recordingConfig;
+
+            if (mode === JitsiRecordingConstants.mode.FILE) {
+                if (dropboxToken) {
+                    recordingConfig = {
+                        mode: JitsiRecordingConstants.mode.FILE,
+                        appData: JSON.stringify({
+                            'file_recording_metadata': {
+                                'upload_credentials': {
+                                    'service_name': RECORDING_TYPES.DROPBOX,
+                                    'token': dropboxToken
+                                }
+                            }
+                        })
+                    };
+                } else {
+                    recordingConfig = {
+                        mode: JitsiRecordingConstants.mode.FILE,
+                        appData: JSON.stringify({
+                            'file_recording_metadata': {
+                                'share': shouldShare
+                            }
+                        })
+                    };
+                }
+            } else if (mode === JitsiRecordingConstants.mode.STREAM) {
+                recordingConfig = {
+                    broadcastId: youtubeBroadcastID,
+                    mode: JitsiRecordingConstants.mode.STREAM,
+                    streamId: youtubeStreamKey
+                };
+            } else {
+                logger.error('Invalid recording mode provided');
+
+                return;
+            }
+
+            conference.startRecording(recordingConfig);
+        },
+
+        /**
+         * Stops a recording or streaming in progress.
+         *
+         * @param {string} mode - `file` or `stream`.
+         * @returns {void}
+         */
+        'stop-recording': mode => {
+            const state = APP.store.getState();
+            const conference = getCurrentConference(state);
+
+            if (!conference) {
+                logger.error('Conference is not defined');
+
+                return;
+            }
+
+            if (![ JitsiRecordingConstants.mode.FILE, JitsiRecordingConstants.mode.STREAM ].includes(mode)) {
+                logger.error('Invalid recording mode provided!');
+
+                return;
+            }
+
+            const activeSession = getActiveSession(state, mode);
+
+            if (activeSession && activeSession.id) {
+                conference.stopRecording(activeSession.id);
+            } else {
+                logger.error('No recording or streaming session found');
+            }
         }
     };
     transport.on('event', ({ data, name }) => {
@@ -239,6 +371,21 @@ function initCommands() {
         const { name } = request;
 
         switch (name) {
+        case 'capture-largevideo-screenshot' :
+            APP.store.dispatch(captureLargeVideoScreenshot())
+                .then(dataURL => {
+                    let error;
+
+                    if (!dataURL) {
+                        error = new Error('No large video found!');
+                    }
+
+                    callback({
+                        error,
+                        dataURL
+                    });
+                });
+            break;
         case 'invite': {
             const { invitees } = request;
 
@@ -282,6 +429,9 @@ function initCommands() {
             break;
         case 'is-video-available':
             callback(videoAvailable);
+            break;
+        case 'is-sharing-screen':
+            callback(Boolean(APP.conference.isSharingScreen));
             break;
         default:
             return false;
@@ -433,6 +583,19 @@ class API {
     }
 
     /**
+     * Notify external application that the video quality setting has changed.
+     *
+     * @param {number} videoQuality - The video quality. The number represents the maximum height of the video streams.
+     * @returns {void}
+     */
+    notifyVideoQualityChanged(videoQuality: number) {
+        this._sendEvent({
+            name: 'video-quality-changed',
+            videoQuality
+        });
+    }
+
+    /**
      * Notify external application (if API is enabled) that message was
      * received.
      *
@@ -542,7 +705,8 @@ class API {
     notifyDeviceListChanged(devices: Object) {
         this._sendEvent({
             name: 'device-list-changed',
-            devices });
+            devices
+        });
     }
 
     /**
@@ -585,6 +749,21 @@ class API {
     }
 
     /**
+     * Notify external application (if API is enabled) that the an error has been logged.
+     *
+     * @param {string} logLevel - The message log level.
+     * @param {Array} args - Array of strings composing the log message.
+     * @returns {void}
+     */
+    notifyLog(logLevel: string, args: Array<string>) {
+        this._sendEvent({
+            name: 'log',
+            logLevel,
+            args
+        });
+    }
+
+    /**
      * Notify external application (if API is enabled) that the conference has
      * been joined.
      *
@@ -604,8 +783,7 @@ class API {
     }
 
     /**
-     * Notify external application (if API is enabled) that user changed their
-     * nickname.
+     * Notify external application (if API is enabled) that local user has left the conference.
      *
      * @param {string} roomName - User id.
      * @returns {void}
