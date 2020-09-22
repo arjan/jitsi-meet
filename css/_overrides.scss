@@ -1,4 +1,6 @@
-body, body > div#react > div, #largeVideoContainer {
+body,
+body > div#react > div,
+#largeVideoContainer {
     background: none !important;
 }
 
@@ -24,7 +26,7 @@ body, body > div#react > div, #largeVideoContainer {
 }
 
 .blinkborder {
-	animation: discoborder 1s steps(5) infinite;
+    animation: discoborder 1s steps(5) infinite;
 }
 
 $red: #ff2148;
@@ -53,4 +55,8 @@ $pink: #fd7ac4;
     80% {
         box-shadow: 0 0 0 5px $green;
     }
+}
+
+div.watermark {
+    display: none !important;
 }
