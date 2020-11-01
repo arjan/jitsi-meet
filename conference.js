@@ -24,7 +24,6 @@ import {
     reloadWithStoredParams
 } from './react/features/app/actions';
 import {
-    AVATAR_ID_COMMAND,
     AVATAR_URL_COMMAND,
     EMAIL_COMMAND,
     authStatusChanged,
@@ -66,6 +65,8 @@ import {
     JitsiTrackEvents
 } from './react/features/base/lib-jitsi-meet';
 import {
+    getStartWithAudioMuted,
+    getStartWithVideoMuted,
     isVideoMutedByUser,
     MEDIA_TYPE,
     setAudioAvailable,
@@ -97,17 +98,15 @@ import {
     destroyLocalTracks,
     getLocalJitsiAudioTrack,
     getLocalJitsiVideoTrack,
-    isLocalVideoTrackMuted,
+    isLocalCameraTrackMuted,
     isLocalTrackMuted,
     isUserInteractionRequiredForUnmute,
     replaceLocalTrack,
     trackAdded,
     trackRemoved
 } from './react/features/base/tracks';
-import {
-    getBackendSafePath,
-    getJitsiMeetGlobalNS
-} from './react/features/base/util';
+import { downloadJSON } from './react/features/base/util/downloadJSON';
+import { getConferenceOptions } from './react/features/conference/functions';
 import { showDesktopPicker } from './react/features/desktop-picker';
 import { appendSuffix } from './react/features/display-name';
 import {
@@ -123,7 +122,6 @@ import {
     isPrejoinPageVisible,
     makePrecallTest
 } from './react/features/prejoin';
-import { createRnnoiseProcessorPromise } from './react/features/rnnoise';
 import { toggleScreenshotCaptureEffect } from './react/features/screenshot-capture';
 import { setSharedVideoStatus } from './react/features/shared-video';
 import { AudioMixerEffect } from './react/features/stream-effects/audio-mixer/AudioMixerEffect';
@@ -172,7 +170,6 @@ window.JitsiMeetScreenObtainer = {
  * Known custom conference commands.
  */
 const commands = {
-    AVATAR_ID: AVATAR_ID_COMMAND,
     AVATAR_URL: AVATAR_URL_COMMAND,
     CUSTOM_ROLE: 'custom-role',
     EMAIL: EMAIL_COMMAND,
@@ -736,10 +733,10 @@ export default {
         const initialOptions = {
             startAudioOnly: config.startAudioOnly,
             startScreenSharing: config.startScreenSharing,
-            startWithAudioMuted: config.startWithAudioMuted
+            startWithAudioMuted: getStartWithAudioMuted(APP.store.getState())
                 || config.startSilent
                 || isUserInteractionRequiredForUnmute(APP.store.getState()),
-            startWithVideoMuted: config.startWithVideoMuted
+            startWithVideoMuted: getStartWithVideoMuted(APP.store.getState())
                 || isUserInteractionRequiredForUnmute(APP.store.getState())
         };
 
@@ -814,7 +811,7 @@ export default {
     isLocalVideoMuted() {
         // If the tracks are not ready, read from base/media state
         return this._localTracksInitialized
-            ? isLocalVideoTrackMuted(
+            ? isLocalCameraTrackMuted(
                 APP.store.getState()['features/base/tracks'])
             : isVideoMutedByUser(APP.store);
     },
@@ -1138,20 +1135,6 @@ export default {
     },
 
     /**
-     * Get participant connection status for the participant.
-     *
-     * @param {string} id participant's identifier(MUC nickname)
-     *
-     * @returns {ParticipantConnectionStatus|null} the status of the participant
-     * or null if no such participant is found or participant is the local user.
-     */
-    getParticipantConnectionStatus(id) {
-        const participant = this.getParticipantById(id);
-
-        return participant ? participant.getConnectionStatus() : null;
-    },
-
-    /**
      * Gets the display name foe the <tt>JitsiParticipant</tt> identified by
      * the given <tt>id</tt>.
      *
@@ -1221,19 +1204,8 @@ export default {
         // this can be called from console and will not have reference to this
         // that's why we reference the global var
         const logs = APP.connection.getLogs();
-        const data = encodeURIComponent(JSON.stringify(logs, null, '  '));
 
-        const elem = document.createElement('a');
-
-        elem.download = filename;
-        elem.href = `data:application/json;charset=utf-8,\n${data}`;
-        elem.dataset.downloadurl
-            = [ 'text/json', elem.download, elem.href ].join(':');
-        elem.dispatchEvent(new MouseEvent('click', {
-            view: window,
-            bubbles: true,
-            cancelable: false
-        }));
+        downloadJSON(logs, filename);
     },
 
     /**
@@ -1329,53 +1301,7 @@ export default {
     },
 
     _getConferenceOptions() {
-        const options = config;
-        const { email, name: nick } = getLocalParticipant(APP.store.getState());
-
-        const state = APP.store.getState();
-        const { locationURL } = state['features/base/connection'];
-        const { tenant } = state['features/base/jwt'];
-
-        if (tenant) {
-            options.siteID = tenant;
-        }
-
-        if (options.enableDisplayNameInStats && nick) {
-            options.statisticsDisplayName = nick;
-        }
-
-        if (options.enableEmailInStats && email) {
-            options.statisticsId = email;
-        }
-
-        options.applicationName = interfaceConfig.APP_NAME;
-        options.getWiFiStatsMethod = this._getWiFiStatsMethod;
-        options.confID = `${locationURL.host}${getBackendSafePath(locationURL.pathname)}`;
-        options.createVADProcessor = createRnnoiseProcessorPromise;
-
-        // Disable CallStats, if requessted.
-        if (options.disableThirdPartyRequests) {
-            delete options.callStatsID;
-            delete options.callStatsSecret;
-            delete options.getWiFiStatsMethod;
-        }
-
-        return options;
-    },
-
-    /**
-     * Returns the result of getWiFiStats from the global NS or does nothing
-     * (returns empty result).
-     * Fixes a concurrency problem where we need to pass a function when creating
-     * JitsiConference, but that method is added to the context later.
-     *
-     * @returns {Promise}
-     * @private
-     */
-    _getWiFiStatsMethod() {
-        const gloabalNS = getJitsiMeetGlobalNS();
-
-        return gloabalNS.getWiFiStats ? gloabalNS.getWiFiStats() : Promise.resolve('{}');
+        return getConferenceOptions(APP.store.getState());
     },
 
     /**
@@ -2196,16 +2122,6 @@ export default {
                     }));
             });
 
-        room.addCommandListener(this.commands.defaults.AVATAR_ID,
-            (data, from) => {
-                APP.store.dispatch(
-                    participantUpdated({
-                        conference: room,
-                        id: from,
-                        avatarID: data.value
-                    }));
-            });
-
         APP.UI.addListener(UIEvents.NICKNAME_CHANGED,
             this.changeLocalDisplayName.bind(this));
 
@@ -2674,6 +2590,20 @@ export default {
         // https://bugs.chromium.org/p/chromium/issues/detail?id=997689
         const hasDefaultMicChanged = newDevices.audioinput === 'default';
 
+        // This is the case when the local video is muted and a preferred device is connected.
+        if (requestedInput.video && this.isLocalVideoMuted()) {
+            // We want to avoid creating a new video track in order to prevent turning on the camera.
+            requestedInput.video = false;
+            APP.store.dispatch(updateSettings({ // Update the current selected camera for the device selection dialog.
+                cameraDeviceId: newDevices.videoinput
+            }));
+            delete newDevices.videoinput;
+
+            // Removing the current video track in order to force the unmute to select the preferred device.
+            this.useVideoStream(null);
+
+        }
+
         promises.push(
             mediaDeviceHelper.createLocalTracksAfterDeviceListChanged(
                     createLocalTracksF,
@@ -3095,7 +3025,7 @@ export default {
      * @param {boolean} muted - New muted status.
      */
     setVideoMuteStatus(muted) {
-        APP.UI.setVideoMuted(this.getMyUserId(), muted);
+        APP.UI.setVideoMuted(this.getMyUserId());
         APP.API.notifyVideoMutedStatusChanged(muted);
     },
 

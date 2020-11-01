@@ -12,10 +12,13 @@ import { i18next } from '../../../react/features/base/i18n';
 import {
     JitsiParticipantConnectionStatus
 } from '../../../react/features/base/lib-jitsi-meet';
+import { MEDIA_TYPE } from '../../../react/features/base/media';
 import {
+    getParticipantById,
     getPinnedParticipant,
     pinParticipant
 } from '../../../react/features/base/participants';
+import { isRemoteTrackMuted } from '../../../react/features/base/tracks';
 import { PresenceLabel } from '../../../react/features/presence-status';
 import {
     REMOTE_CONTROL_MENU_STATES,
@@ -86,7 +89,6 @@ export default class RemoteVideo extends SmallVideo {
         this.bindHoverHandler();
         this.flipX = false;
         this.isLocal = false;
-        this.popupMenuIsHovered = false;
         this._isRemoteControlSessionActive = false;
 
         /**
@@ -135,17 +137,6 @@ export default class RemoteVideo extends SmallVideo {
         this.addPresenceLabel();
 
         return this.container;
-    }
-
-    /**
-     * Checks whether current video is considered hovered. Currently it is hovered
-     * if the mouse is over the video, or if the connection indicator or the popup
-     * menu is shown(hovered).
-     * @private
-     * NOTE: extends SmallVideo's method
-     */
-    _isHovered() {
-        return super._isHovered() || this.popupMenuIsHovered;
     }
 
     /**
@@ -207,7 +198,6 @@ export default class RemoteVideo extends SmallVideo {
                     <AtlasKitThemeProvider mode = 'dark'>
                         <RemoteVideoMenuTriggerButton
                             initialVolumeValue = { initialVolumeValue }
-                            isAudioMuted = { this.isAudioMuted }
                             menuPosition = { remoteMenuPosition }
                             onMenuDisplay
                                 = {this._onRemoteVideoMenuDisplay.bind(this)}
@@ -311,22 +301,16 @@ export default class RemoteVideo extends SmallVideo {
 
     /**
      * Updates the remote video menu.
-     *
-     * @param isMuted the new muted state to update to
      */
-    updateRemoteVideoMenu(isMuted) {
-        if (typeof isMuted !== 'undefined') {
-            this.isAudioMuted = isMuted;
-        }
+    updateRemoteVideoMenu() {
         this._generatePopupContent();
     }
 
     /**
-     * @inheritDoc
-     * @override
+     * Video muted status changed handler.
      */
-    setVideoMutedView(isMuted) {
-        super.setVideoMutedView(isMuted);
+    onVideoMute() {
+        super.updateView();
 
         // Update 'mutedWhileDisconnected' flag
         this._figureOutMutedWhileDisconnected();
@@ -339,11 +323,15 @@ export default class RemoteVideo extends SmallVideo {
      * @private
      */
     _figureOutMutedWhileDisconnected() {
-        const isActive = this.isConnectionActive();
+        const state = APP.store.getState();
+        const participant = getParticipantById(state, this.id);
+        const connectionState = participant?.connectionStatus;
+        const isActive = connectionState === JitsiParticipantConnectionStatus.ACTIVE;
+        const isVideoMuted = isRemoteTrackMuted(state['features/base/tracks'], MEDIA_TYPE.VIDEO, this.id);
 
-        if (!isActive && this.isVideoMuted) {
+        if (!isActive && isVideoMuted) {
             this.mutedWhileDisconnected = true;
-        } else if (isActive && !this.isVideoMuted) {
+        } else if (isActive && !isVideoMuted) {
             this.mutedWhileDisconnected = false;
         }
     }
@@ -379,17 +367,6 @@ export default class RemoteVideo extends SmallVideo {
     }
 
     /**
-     * Checks whether the remote user associated with this <tt>RemoteVideo</tt>
-     * has connectivity issues.
-     *
-     * @return {boolean} <tt>true</tt> if the user's connection is fine or
-     * <tt>false</tt> otherwise.
-     */
-    isConnectionActive() {
-        return this.user.getConnectionStatus() === JitsiParticipantConnectionStatus.ACTIVE;
-    }
-
-    /**
      * The remote video is considered "playable" once the can play event has been received. It will be allowed to
      * display video also in {@link JitsiParticipantConnectionStatus.INTERRUPTED} if the video has received the canplay
      * event and was not muted while not in ACTIVE state. This basically means that there is stalled video image cached
@@ -400,7 +377,8 @@ export default class RemoteVideo extends SmallVideo {
      * @override
      */
     isVideoPlayable() {
-        const connectionState = APP.conference.getParticipantConnectionStatus(this.id);
+        const participant = getParticipantById(APP.store.getState(), this.id);
+        const connectionState = participant?.connectionStatus;
 
         return super.isVideoPlayable()
             && this._canPlayEventReceived
@@ -413,25 +391,8 @@ export default class RemoteVideo extends SmallVideo {
      */
     updateView() {
         this.$container.toggleClass('audio-only', APP.conference.isAudioOnly());
-        this.updateConnectionStatusIndicator();
-
-        // This must be called after 'updateConnectionStatusIndicator' because it
-        // affects the display mode by modifying 'mutedWhileDisconnected' flag
-        super.updateView();
-    }
-
-    /**
-     * Updates the UI to reflect user's connectivity status.
-     */
-    updateConnectionStatusIndicator() {
-        const connectionStatus = this.user.getConnectionStatus();
-
-        logger.debug(`${this.id} thumbnail connection status: ${connectionStatus}`);
-
-        // FIXME rename 'mutedWhileDisconnected' to 'mutedWhileNotRendering'
-        // Update 'mutedWhileDisconnected' flag
         this._figureOutMutedWhileDisconnected();
-        this.updateConnectionStatus(connectionStatus);
+        super.updateView();
     }
 
     /**
